@@ -7,11 +7,7 @@ module.exports = {
     host: 'example.com',
     path: './dist',
     filename: 'app.bundle.js',
-    publicPath: '/dist/',
-    https: {
-      key: fs.readFileSync('/opt/certs/example.com.key'),
-      cert: fs.readFileSync('/opt/certs/example.com.crt')
-    }
+    publicPath: '/dist/'
   },
   devtool: 'source-map',
   module: {
