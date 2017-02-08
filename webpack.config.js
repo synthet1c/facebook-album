@@ -10,6 +10,9 @@ module.exports = {
     publicPath: '/dist/'
   },
   devtool: 'source-map',
+  devserver: {
+    port: 8008
+  },
   module: {
     loaders: [
       {
