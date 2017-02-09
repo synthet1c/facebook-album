@@ -13,11 +13,8 @@ const ACCESS_TOKEN = `${APP_ID}|${TOKEN}`
 const photoFields = ['height','icon','images','link','name','picture','width','source']
 const param = obj => Object.keys(obj).reduce((acc, x) => (acc[x]), '')
 
-// _ -> Future [Image]
+// _ -> Task [Album]
 export const facebook = (cb) => {
-  if (typeof FB !== 'undefined') {
-    return cb(FB)
-  }
   const script = document.createElement('script')
   window.fbAsyncInit = () => {
     FB.init({
@@ -26,7 +23,18 @@ export const facebook = (cb) => {
       version: 'v2.3',
       access_token: ACCESS_TOKEN
     })
-    cb(FB)
+    
+    const albumAndImages = curry((profile, album, photos) => ({
+      ...album,
+      profile,
+      photos: { data: take(6, photos.data) }
+    }))
+
+    const lifted = liftA3(albumAndImages, getProfile(PROFILE), getAlbum(ALBUM_ID), getPhotos(ALBUM_ID))
+      .map(attachHTML)
+      .map(trace('applied'))
+
+    cb(lifted)
   }
   script.src = '//connect.facebook.net/en_US/sdk.js'
   document.head.appendChild(script)
@@ -62,7 +70,7 @@ export const getPhoto = photoId => new Task((reject, resolve) => {
   } ,resolve)
 })
 
-const getCoverPhoto = album => new Task((reject, resolve) => {
+export const getCoverPhoto = album => new Task((reject, resolve) => {
   FB.api(`/${album.cover_photo}`, {
     access_token: ACCESS_TOKEN
   }, cover => resolve({...album, cover}))
@@ -75,16 +83,7 @@ const header = heading =>
 
 const getImage = compose(prop('source'), last, prop('images'))
 
-const loadImages = images => Promise.all(
-  images.map(image => 
-    new Promise((resolve, reject) => {
-      const img = new Image
-      img.onload = () => resolve(img)
-      img.onerror = reject
-      img.src = image.source
-    })
-  )
-)
+
 
 const loadImagesTest = images => new Promise(res => setTimeout(res, 600))
 
@@ -135,32 +134,6 @@ const attachHTML = album => ({
 })
 
 
-  
 
-facebook(function(FB) {
 
-  const albumAndImages = curry((profile, album, photos) => ({
-    ...album,
-    profile,
-    photos: { data: take(6, photos.data) }
-  }))
 
-  const lifted = liftA3(albumAndImages, getProfile(PROFILE), getAlbum(ALBUM_ID), getPhotos(ALBUM_ID))
-    .map(attachHTML)
-    .map(trace('applied'))
-
-  lifted.fork(
-    e => console.error(e),
-    album => {
-      const app = document.querySelector('#app')
-      
-      app.appendChild(album.html)
-      
-      loadImages(album.photos.data)
-        .then(() => {
-          app.querySelector('.fb-album').classList.remove('loading')    
-        })
-    }
-  )
-
-})
