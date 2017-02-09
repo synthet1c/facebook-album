@@ -3,6 +3,13 @@ body {
 }
 
 .fb-album {
+ 
+  &.loading {
+    .fb-album__cover::after {
+      opacity: 1 !important;
+    }
+  }
+  font-family: sans-serif;
 
   max-width: 400px;
 
@@ -17,10 +24,15 @@ body {
   &__heading {
 
   }
-
+  
   &__list {
-
+    &::before, &::after {
+      content: ' ';
+      display: table;
+      clear: both;
+    }
   }
+  
 
   &__item {
     margin-bottom: 1%;
@@ -28,15 +40,15 @@ body {
     float: left;
     width: 100%;
     
-    @media screen and (min-width: 480px) {
+    @media screen and (min-width: 321px) {
       width: 49%;
       margin-left: 1%;
     }
 
-    @media screen and (min-width: 600px) {
-      width: 24%;
-      margin-left: 1%;
-    }
+    //@media screen and (min-width: 600px) {
+    //  width: 24%;
+    //  margin-left: 1%;
+    //}
   }
 
   &__img {
@@ -44,6 +56,11 @@ body {
     background-repeat: no-repeat;
     background-size: cover;
     width: 100%;
+    
+    @media screen and (min-width: 321px) {
+      padding-top: 100%;
+      padding-top: 56.25%;
+    }
   }
 
   &__cover {
@@ -53,16 +70,63 @@ body {
     bottom: 0;
     left: 0;
     transition: .4s all;
-    opacity: 0;
     cursor: pointer;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      display: block;
+      padding-top: 75%;
+      border-radius: 50%;
+      width: 200%;
+      height: 200%;
+      position: absolute;
+      opacity: 0;
+      top: -50%;
+      left: -50%;
+      box-shadow: inset 0 0 0 0 rgba(30, 30, 30, 0);
+      transition: .4s box-shadow;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      background-color: white;
+      background-image: url(/assets/facebook.svg);
+      background-position: center center;
+      background-repeat: no-repeat;
+      transition: .2s all;
+    }
 
     &:hover {
-      background: rgba(255, 255, 255, 0.6);
-      opacity: 1;
+      //background: rgba(255, 255, 255, 0.6);
+
+      &::before {
+        box-shadow: inset 0 0 0 350px rgba(30, 30, 30, 0.4);
+        opacity: 1;
+      }
+
+      .fb-album__icon {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
   }
 
   &__link {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+  }
+
+  &__text {
     display: block;
     color: white;
     font-family: sans-serif;
@@ -72,13 +136,21 @@ body {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 50%;
-    margin: -10% 0 0 -25%;
+    transform: translate(-50%, -50%);
     cursor: pointer;
   }
 
   &__icon {
     width: 40px;
+    transform: scale(0.5);
+    opacity: 0;
+    transition: .2s all ease-out;
+  }
+
+  &__location {
+    margin: 0;
+    padding: 0;
+    font-size: .6em;
   }
 
 }
