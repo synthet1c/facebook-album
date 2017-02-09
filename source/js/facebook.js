@@ -1,6 +1,6 @@
 import Task from 'data.task'
-import template, { div, section, h3, p, ul, li, img, a, span } from './template'
-import { compose, curry, prop, head, last, map, chain, take, trace } from './utils'
+import element, { div, section, h3, p, ul, li, img, a, span, svg } from './template'
+import { compose, curry, prop, head, last, map, chain, take, trace, lift } from './utils'
 
 import '../scss/facebook.scss'
 
@@ -51,6 +51,16 @@ const header = heading =>
 
 const getImage = compose(prop('source'), last, prop('images'))
 
+const icon = () => 
+  svg('svg', '#fb_icon.fb-album__icon', { 'viewBox': '0 0 1024 1024', 'width': '100%' },
+    svg('g', '.fb-album__icon--g', 
+      svg('path', '.fb-album__icon--path', {
+        'fill': '#ffffff',
+        'd': `M621.273,512.188h-71.75V768H443.211V512.188h-50.562v-90.375h50.562v-58.5   C443.211,321.5,463.086,256,550.492,256l78.75,0.312v87.75h-57.156c-9.312,0-22.562,4.656-22.562,24.594v53.156h81.062   L621.273,512.188z M863.586,0h-704c-88.375,0-160,71.688-160,160v704c0,88.375,71.625,160,160,160h704c88.375,0,160-71.625,160-160   V160C1023.586,71.688,951.961,0,863.586,0`
+      })
+    )
+  )
+
 // {Image} -> {Image}
 const attachHTML = album => ({
   ...album,
@@ -66,9 +76,7 @@ const attachHTML = album => ({
               }
             }),
             div('.fb-album__cover',
-              a('.fb-album__link', { href: photo.link },
-                'link'
-              )
+              a('.fb-album__link', { href: photo.link }, icon())
             )
           )
         )
@@ -77,13 +85,12 @@ const attachHTML = album => ({
   )
 })
 
-const lift = (fn, o1, o2) => o1.map(fn).ap(o2)
 
 facebook(function(FB) {
 
   const albumAndImages = curry((album, photos) => ({
     ...album,
-    photos
+    photos: { data: take(4, photos.data) }
   }))
 
   const lifted = lift(albumAndImages, getAlbum(ALBUM_ID), getPhotos(ALBUM_ID))

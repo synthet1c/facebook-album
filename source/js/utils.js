@@ -21,5 +21,5 @@ export const map = curry((f, obj) => obj.map(f))
 export const chain = curry((f, obj) => obj.chain(f))
 export const take = curry((n, a) => a.slice(0, n))
 export const trace = name => x => (console.log(name, x), x)
-
+export const lift = (fn, o1, o2) => o1.map(fn).ap(o2)
 

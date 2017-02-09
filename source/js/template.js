@@ -10,6 +10,7 @@ export const div = element('div')
 export const img = element('img')
 export const span = element('span')
 export const section = element('section')
+export const svg = curryRest(createSVG)
 
  /*
  * createElement
@@ -30,7 +31,35 @@ function createElement(type, selector, children) {
     if (typeof child === 'string') {
       child = document.createTextNode(child)
     }
-    element.appendChild(child)
+    if (child instanceof HTMLElement || child instanceof Text || child instanceof SVGElement) {
+      element.appendChild(child)
+    }
+  })
+  return element
+}
+
+ /*
+ * createSVG
+ *
+ * recurse through element tree and return DOM html
+ *
+ * @param  {String}  type  element node name
+ * @param  {String}  selector  css selector to apply to the element
+ * @param  {Object|HTMLElement}  ...children  attrs to apply, or children
+*/
+function createSVG(type, selector, children) {
+  const element = document.createElementNS('http://www.w3.org/2000/svg', type)
+  applySelector(selector, element)
+  if (children[0].constructor === Object) {
+    const attrs = children.shift();
+    for (let attr in attrs) {
+      element.setAttributeNS(null, attr, attrs[attr])
+    }
+  }
+  children.forEach(child => {
+    if (child instanceof SVGElement) {
+      element.appendChild(child)
+    }
   })
   return element
 }
@@ -95,6 +124,10 @@ function applyAttributes(attrs, element) {
 	Object.keys(attrs).forEach(attr => {
     if (attr === 'style') {
       applyStyles(attrs.style, element)
+    }
+    else if (attr.charAt(0) === '!') {
+      let prop = attr.slice(1)
+      element.setAttribute(prop, attrs[attr])
     }
     else if (attr in element) {
 			element[attr] = attrs[attr]
