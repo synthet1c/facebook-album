@@ -1,5 +1,7 @@
 const fs = require('fs')
 
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
+
 module.exports = {
   context: __dirname,
   entry: './source/js/app.js',
@@ -24,6 +26,19 @@ module.exports = {
           cacheDirectory: '.webpackcache'
         }
       },
+      {
+        test: /\.scss$/,
+        loader: ExtractTextPlugin.extract(
+          'style', // The backup style loader
+          'css?sourceMap!sass?sourceMap'
+        )
+      }
     ]
-  }
+  },
+  sassLoader: {
+    includePaths: [ 'source/scss' ]
+  },
+  plugins: [
+    new ExtractTextPlugin('main.css')
+  ]
 };

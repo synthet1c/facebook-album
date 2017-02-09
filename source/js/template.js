@@ -2,11 +2,13 @@ const element = curryRest(createElement)
 
 export default element
 export const p = element('p')
+export const a = element('a')
 export const h3 = element('h3')
 export const ul = element('ul')
 export const li = element('li')
 export const div = element('div')
 export const img = element('img')
+export const span = element('span')
 export const section = element('section')
 
  /*
@@ -36,8 +38,8 @@ function createElement(type, selector, children) {
  /*
  * curryRest
  *
- * curry function with last named argument transformed 
- * into an array 
+ * curry function with last named argument transformed
+ * into an array
  *
  * @param  {Function}  fn  function to curry
 */
@@ -74,10 +76,16 @@ function applySelector(selector, element) {
 	})
 }
 
+function applyStyles(styles, element) {
+  Object.keys(styles).forEach(prop => {
+    element.style[prop] = styles[prop]
+  })
+}
+
  /*
  * applyAttributes
  *
- * add attributes to an element, non native attributes are applied 
+ * add attributes to an element, non native attributes are applied
  * as data-attr
  *
  * @param  {Object}  attrs  attributes to apply to element
@@ -85,7 +93,10 @@ function applySelector(selector, element) {
 */
 function applyAttributes(attrs, element) {
 	Object.keys(attrs).forEach(attr => {
-		if (attr in element) {
+    if (attr === 'style') {
+      applyStyles(attrs.style, element)
+    }
+    else if (attr in element) {
 			element[attr] = attrs[attr]
 		}
 		else {

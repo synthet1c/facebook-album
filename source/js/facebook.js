@@ -1,18 +1,8 @@
 import Task from 'data.task'
-// import {Future} from 'ramda-fantasy'
-import template, { div, section, h3, p, ul, li, img } from './template'
-import {
-  compose,
-  curry,
-  prop,
-  head,
-  last,
-  map,
-  chain,
-  take,
-  trace
-} from './utils'
-/* # UTILS */
+import template, { div, section, h3, p, ul, li, img, a, span } from './template'
+import { compose, curry, prop, head, last, map, chain, take, trace } from './utils'
+
+import '../scss/facebook.scss'
 
 const test = 'test'
 const APP_ID = '775908159169504'
@@ -40,7 +30,7 @@ export const facebook = (cb) => {
   script.src = '//connect.facebook.net/en_US/sdk.js'
   document.head.appendChild(script)
 }
-    
+
 export const getPhotos = albumId => new Task((reject, resolve) => {
   FB.api(`/${albumId}/photos`, {
     fields: photoFields,
@@ -54,34 +44,43 @@ export const getAlbum = albumId => new Task((reject, resolve) => {
   } ,resolve)
 })
 
-
+const header = heading =>
+  div('.fb-album__header',
+    h3('fb-album__heading', heading)
+  )
 
 const getImage = compose(prop('source'), last, prop('images'))
 
 // {Image} -> {Image}
 const attachHTML = album => ({
-  ...album, 
-  html: section('.fb-album', 
-    div('.fb-album__inner', 
-      div('fb-album__header', 
-        h3('fb-album__heading', album.name)
-      ),
+  ...album,
+  html: section('.fb-album',
+    div('.fb-album__inner',
+      header(album.name),
       div('fb-album__list',
-        ...album.photos.data.map(photo => 
-          div('.fb-album__item', 
-            img('.fb-album__img', { src: photo.source }),
-            div('.fb-album__cover', '')
+        ...album.photos.data.map(photo =>
+          div('.fb-album__item',
+            div('.fb-album__img', {
+              style: {
+                backgroundImage: `url(${photo.source})`
+              }
+            }),
+            div('.fb-album__cover',
+              a('.fb-album__link', { href: photo.link },
+                'link'
+              )
+            )
           )
         )
       )
-    )  
+    )
   )
 })
 
 const lift = (fn, o1, o2) => o1.map(fn).ap(o2)
 
 facebook(function(FB) {
-  
+
   const albumAndImages = curry((album, photos) => ({
     ...album,
     photos
@@ -90,7 +89,7 @@ facebook(function(FB) {
   const lifted = lift(albumAndImages, getAlbum(ALBUM_ID), getPhotos(ALBUM_ID))
     .map(trace('applied'))
     .map(attachHTML)
-  
+
   lifted.fork(
     e => console.error(e),
     album => {
