@@ -7,7 +7,10 @@
     "test": "jest --watch",
     "start": "node server.js",
     "build": "./node_modules/.bin/webpack --progress --colors -p",
-    "watch": "./node_modules/.bin/webpack-dev-server --progress --colors --hot --inline --config webpack.config.js --port 8008"
+    "watch": "./node_modules/.bin/webpack-dev-server --progress --colors --hot --inline --config webpack.config.js --port 8008",
+    "browserify": "browserify source/js/main.js -o bundle.js -t [ babelify --presets [ es2015 stage-2 ] ]",
+    "uglify": "uglifyjs browserify.js -c -m -o uglifyjs.js",
+    "buildify": "npm run browserify && npm run uglify"
   },
   "author": "",
   "license": "ISC",

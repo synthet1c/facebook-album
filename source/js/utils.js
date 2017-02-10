@@ -14,6 +14,7 @@ export const compose = (a, ...rest) =>
     ? a
     : c => a(compose(...rest)(c))
 
+export const identity = x => x
 export const prop = curry((key, obj) => obj[key])
 export const head = arr => arr[0]
 export const last = arr => arr[arr.length - 1]

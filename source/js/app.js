@@ -16,7 +16,7 @@ facebook(function(album) {
   album.fork(
     e => console.error(e),
     album => {
-      const app = document.querySelector('#app')
+      const app = document.querySelector('#facebook_album')
       
       app.appendChild(album.html)
       

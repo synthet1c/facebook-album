@@ -1,17 +1,14 @@
 import Task from 'data.task'
 import element, { div, section, h3, p, ul, li, img, a, span, svg } from './template'
-import { compose, curry, prop, head, last, map, chain, take, trace, liftA3 } from './utils'
+import { compose, curry, prop, head, last, map, chain, take, trace, liftA3, identity } from './utils'
 
 import '../scss/facebook.scss'
 
-const test = 'test'
 const APP_ID = '775908159169504'
 const TOKEN = 'cYEIsh0rs25OQQC8Ex2hXyCOut4'
-const PROFILE = 'TwelveBoardStore'
-const ALBUM_ID = '1776962582516324'
 const ACCESS_TOKEN = `${APP_ID}|${TOKEN}`
-const photoFields = ['height','icon','images','link','name','picture','width','source']
-const param = obj => Object.keys(obj).reduce((acc, x) => (acc[x]), '')
+const ALBUM_ELEMENT = document.querySelector('#facebook_album')
+const { profile: PROFILE, album: ALBUM_ID } = ALBUM_ELEMENT.dataset
 
 // _ -> Task [Album]
 export const facebook = (cb) => {
@@ -30,9 +27,14 @@ export const facebook = (cb) => {
       photos: { data: take(6, photos.data) }
     }))
 
-    const lifted = liftA3(albumAndImages, getProfile(PROFILE), getAlbum(ALBUM_ID), getPhotos(ALBUM_ID))
-      .map(attachHTML)
-      .map(trace('applied'))
+    const lifted = liftA3(
+      albumAndImages, 
+      getProfile(PROFILE), 
+      getAlbum(ALBUM_ID),
+      getPhotos(ALBUM_ID)
+    )
+    .map(attachHTML)
+    // .map(trace('applied'))
 
     cb(lifted)
   }
@@ -40,54 +42,55 @@ export const facebook = (cb) => {
   document.head.appendChild(script)
 }
 
+// getProfile :: s -> Task Profile
 export const getProfile = profileName => new Task((reject, resolve) => {
   FB.api(`/${profileName}`, {
     access_token: ACCESS_TOKEN
   } ,resolve)
 })
 
+// getProfileAlbums :: s -> Task [Album]
 export const getProfileAlbums = profileName => new Task((reject, resolve) => {
   FB.api(`/${profileName}/albums`, {
     access_token: ACCESS_TOKEN
   } ,resolve)
 })
 
+// getPhotos :: i -> Task [Photo]
 export const getPhotos = albumId => new Task((reject, resolve) => {
   FB.api(`/${albumId}/photos`, {
     access_token: ACCESS_TOKEN
   } ,resolve)
 })
 
+// getAlbum :: i -> Task Album
 export const getAlbum = albumId => new Task((reject, resolve) => {
   FB.api(`/${albumId}`, {
     access_token: ACCESS_TOKEN
   } ,resolve)
 })
 
+// getPhoto :: i -> Task Photo
 export const getPhoto = photoId => new Task((reject, resolve) => {
   FB.api(`/${photoId}`, {
     access_token: ACCESS_TOKEN
   } ,resolve)
 })
 
+// getCoverPhoto :: s -> Task Album
 export const getCoverPhoto = album => new Task((reject, resolve) => {
   FB.api(`/${album.cover_photo}`, {
     access_token: ACCESS_TOKEN
   }, cover => resolve({...album, cover}))
 })
 
+// header :: s -> HTMLElement
 const header = heading =>
   div('.fb-album__header',
     h3('fb-album__heading', heading)
   )
 
-const getImage = compose(prop('source'), last, prop('images'))
-
-
-
-const loadImagesTest = images => new Promise(res => setTimeout(res, 600))
-
-
+// icon :: _ -> SVGElement
 const icon = () => 
   svg('svg', '#fb_icon.fb-album__icon', { viewBox: '0 0 1024 1024', width: '100%' },
     svg('g', '.fb-album__icon--g', 
@@ -104,12 +107,10 @@ const icon = () =>
     )
   )
 
-// {Image} -> {Image}
-const attachHTML = album => ({
-  ...album,
-  html: section('.fb-album.loading',
+// albumTemplate :: Album -> HTMLElement
+const albumTemplate = album => 
+  section('.fb-album.loading',
     div('.fb-album__inner',
-      header(album.name),
       div('.fb-album__list',
         ...album.photos.data.map(photo =>
           div('.fb-album__item',
@@ -131,6 +132,13 @@ const attachHTML = album => ({
       )
     )
   )
+
+
+
+// attachHTML :: Album -> Album
+const attachHTML = album => ({
+  ...album,
+  html: albumTemplate(album)
 })
 
 
