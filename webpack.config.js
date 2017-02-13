@@ -1,44 +1,61 @@
 const fs = require('fs')
+const path = require('path')
 
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
+const extractSass = new ExtractTextPlugin({
+  filename: "[name].[contenthash].css",
+  disable: process.env.NODE_ENV === 'development'
+})
+
 module.exports = {
   context: __dirname,
-  entry: './source/js/app.js',
+  entry: {
+    app: './source/js/app.js'
+  },
   output: {
-    host: 'example.com',
-    path: './dist',
+    path: path.resolve(__dirname, './dist'),
     filename: 'app.bundle.js',
-    publicPath: '/dist/'
+    publicPath: '/dist'
   },
   devtool: 'source-map',
-  devserver: {
+  devServer: {
     port: 8008
   },
   module: {
-    loaders: [
-      {
-        test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        loader: 'babel',
-        query: {
-          presets: ['es2015', 'stage-2'],
-          cacheDirectory: '.webpackcache'
-        }
-      },
+    rules: [
       {
         test: /\.scss$/,
-        loader: ExtractTextPlugin.extract(
-          'style', // The backup style loader
-          'css?sourceMap!sass?sourceMap'
-        )
+        //loader: extractSass.extract({
+        //  loader: [
+        //    { loader: 'css-loader' },
+        //    { loader: 'sass-loader' }
+        //  ],
+        //  fallbackLoader: 'style-loader'
+        //})
+        use: [
+          'style-loader',
+          'css-loader',
+          'sass-loader'
+        ]
+      },
+      {
+        test: /\.js$/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['es2015', 'stage-2'],
+              cacheDirectory: '.webpackcache'
+            }
+          }
+        ] 
+      },
+      {
+        test: /\.json$/,
+        loader: 'json-loader'
       }
+
     ]
-  },
-  sassLoader: {
-    includePaths: [ 'source/scss' ]
-  },
-  plugins: [
-    new ExtractTextPlugin('main.css')
-  ]
+  }
 };

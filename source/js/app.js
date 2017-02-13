@@ -1,4 +1,6 @@
 import { facebook } from './facebook'
+import loader from './loader'
+
 
 const loadImages = images => Promise.all(
   images.map(image => 

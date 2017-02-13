@@ -1,15 +1,33 @@
 import Task from 'data.task'
 import element, { div, section, h3, p, ul, li, img, a, span, svg } from './template'
-import { compose, curry, prop, head, last, map, chain, take, trace, liftA3, identity } from './utils'
+import loader from './loader'
+import { 
+  compose, curry, prop, head, last, 
+  map, chain, take, trace, liftA3, liftA2,
+  identity, sort, minus, not 
+} from './utils'
 
+import { APP_ID, TOKEN } from '../../credentials.json'
 import '../scss/facebook.scss'
+import '../scss/slideshow.scss'
 
-const APP_ID = '775908159169504'
-const TOKEN = 'cYEIsh0rs25OQQC8Ex2hXyCOut4'
 const ACCESS_TOKEN = `${APP_ID}|${TOKEN}`
 const ALBUM_ELEMENT = document.querySelector('#facebook_album')
 const { profile: PROFILE, album: ALBUM_ID } = ALBUM_ELEMENT.dataset
+// https://graph.facebook.com/oauth/access_token?grant_type=client_credentials&client_id=1411024562271943&client_secret=3ec29d3e965312775f2cd02a16eb0a1c 
+const sortByDate = xs => {
+  const copy = xs.slice();
 
+  copy.sort((a, b) =>
+    a.type !== 'normal' 
+      ? 1 
+      : new Date(b.updated_time).getTime() - new Date(a.updated_time).getTime())
+
+  return copy
+}
+
+const first = xs => xs[0]
+const pluckLatestAlbum = compose(prop('id'), first, sortByDate, prop('data'))
 // _ -> Task [Album]
 export const facebook = (cb) => {
   const script = document.createElement('script')
@@ -24,17 +42,25 @@ export const facebook = (cb) => {
     const albumAndImages = curry((profile, album, photos) => ({
       ...album,
       profile,
-      photos: { data: take(6, photos.data) }
+      photos: { data: compose(take(Infinity), sortByDate)(photos.data) }
     }))
 
-    const lifted = liftA3(
-      albumAndImages, 
-      getProfile(PROFILE), 
-      getAlbum(ALBUM_ID),
-      getPhotos(ALBUM_ID)
+    getUploadedPhotos(PROFILE)
+      .fork(trace('error'), trace('success'))
+
+    const latestAlbum = getProfileAlbums(PROFILE)
+      .map(pluckLatestAlbum)
+
+    const lifted = latestAlbum.chain(
+      album => liftA3(
+        albumAndImages, 
+        getProfile(PROFILE), 
+        getAlbum(album),
+        getUploadedPhotos(PROFILE)
+      ) 
     )
     .map(attachHTML)
-    // .map(trace('applied'))
+    .map(trace('applied'))
 
     cb(lifted)
   }
@@ -42,47 +68,56 @@ export const facebook = (cb) => {
   document.head.appendChild(script)
 }
 
-// getProfile :: s -> Task Profile
-export const getProfile = profileName => new Task((reject, resolve) => {
-  FB.api(`/${profileName}`, {
-    access_token: ACCESS_TOKEN
-  } ,resolve)
+// facebookGet :: (s -> o) -> Task FB.api
+const facebookGet = (uri, params) => new Task((reject, resolve) => {
+  let cached = localStorage.getItem(`fb-album__${uri}`)
+
+  if (cached) {
+    cached = JSON.parse(cached)
+    if (Date.now() - cached.timestamp <= cached.expiry) {
+      resolve(cached.value)
+      return
+    }
+  }
+  
+  FB.api(
+    uri, 
+    Object.assign({ access_token: ACCESS_TOKEN }, params), 
+    response => {
+      if ('error' in response) {
+        return reject(response.error)
+      }
+      
+      localStorage.setItem(`fb-album__${uri}`, JSON.stringify({
+        value: response,
+        timestamp: Date.now(),
+        expiry: 600000
+      }))
+      resolve(response)
+    }
+  )  
 })
+
+// getProfile :: s -> Task Profile
+export const getProfile = profileName => facebookGet(`/${profileName}`)
 
 // getProfileAlbums :: s -> Task [Album]
-export const getProfileAlbums = profileName => new Task((reject, resolve) => {
-  FB.api(`/${profileName}/albums`, {
-    access_token: ACCESS_TOKEN
-  } ,resolve)
-})
+export const getProfileAlbums = profileName => facebookGet(`/${profileName}/albums`)
 
 // getPhotos :: i -> Task [Photo]
-export const getPhotos = albumId => new Task((reject, resolve) => {
-  FB.api(`/${albumId}/photos`, {
-    access_token: ACCESS_TOKEN
-  } ,resolve)
-})
+export const getPhotos = albumId => facebookGet(`/${albumId}/photos`)
+
+// getPhotos :: i -> Task [Photo]
+export const getUploadedPhotos = profile => facebookGet(`/${profile}/photos?type=uploaded`)
 
 // getAlbum :: i -> Task Album
-export const getAlbum = albumId => new Task((reject, resolve) => {
-  FB.api(`/${albumId}`, {
-    access_token: ACCESS_TOKEN
-  } ,resolve)
-})
+export const getAlbum = albumId => facebookGet(`/${albumId}`)
 
 // getPhoto :: i -> Task Photo
-export const getPhoto = photoId => new Task((reject, resolve) => {
-  FB.api(`/${photoId}`, {
-    access_token: ACCESS_TOKEN
-  } ,resolve)
-})
+export const getPhoto = photoId => facebookGet(`/${photoId}`)
 
 // getCoverPhoto :: s -> Task Album
-export const getCoverPhoto = album => new Task((reject, resolve) => {
-  FB.api(`/${album.cover_photo}`, {
-    access_token: ACCESS_TOKEN
-  }, cover => resolve({...album, cover}))
-})
+export const getCoverPhoto = album => facebookGet(`/${album.cover_photo}`)
 
 // header :: s -> HTMLElement
 const header = heading =>
@@ -108,7 +143,7 @@ const icon = () =>
   )
 
 // albumTemplate :: Album -> HTMLElement
-const albumTemplate = album => 
+const albumTemplateOld = album => 
   section('.fb-album.loading',
     div('.fb-album__inner',
       div('.fb-album__list',
@@ -123,7 +158,7 @@ const albumTemplate = album =>
               a('.fb-album__link', { href: photo.link }, 
                 div('.fb-album__text',
                   icon(),
-                  // p('.fb-album__location', photo.place.location.city)
+                  p('.fb-album__location', photo.place.location.city)
                 )
               )
             )
@@ -133,6 +168,74 @@ const albumTemplate = album =>
     )
   )
 
+const pascalCase = str => str.replace(/[^\d\w]+/g, '-')
+const uniqueID = () => 'Ox' + (Date.now()).toString(16)
+
+console.log(uniqueID())
+
+const checkbox = curry((className, name) => {
+  const id = uniqueID() 
+  return div('.checkbox', 
+    element(
+      'input', 
+      `#${id}.checkbox__input`, 
+      { type: 'checkbox', name: pascalCase(name) }
+    ),
+    element('label', '.checkbox__label', { htmlFor: id }, name)
+  )
+})
+
+
+const slideshow = album => 
+  section('.slideshow',
+    div('.slideshow__inner',
+      div('.slideshow__content', 
+        div('#photo.slideshow__viewer', {
+          style: { backgroundImage: `url(${album.photos.data[0].source})`}
+        }),
+        div('.slideshow__heading', 
+          checkbox('.slideshow__checkbox', album.name),
+        )
+      )
+    ),
+    div('.thumbnails',
+      div('.thumbnails__list',
+        ...take(3, album.photos.data).map(photo => 
+          div('.thumbnails__item',
+            div('.thumbnails__img', {
+              style: { backgroundImage: `url(${photo.source})`}
+            })
+          )
+        )
+      )
+    )
+  )
+
+const albumTemplate = album => 
+  section('.fb-album.loading',
+    div('.fb-album__inner',
+      div('.fb-album__list',
+        ...album.photos.data.map(photo =>
+          div('.fb-album__item',
+            div('.fb-album__img', {
+              style: {
+                backgroundImage: 'url(' + photo.source + ')'
+              }
+            }),
+            div('.fb-album__cover',
+              a('.fb-album__link', { href: photo.link }, 
+                div('.fb-album__text',
+                  icon()
+                )
+              )
+            )
+          )
+        )
+      )
+    ),
+    slideshow(album)
+  )
+
 
 
 // attachHTML :: Album -> Album
@@ -140,8 +243,3 @@ const attachHTML = album => ({
   ...album,
   html: albumTemplate(album)
 })
-
-
-
-
-

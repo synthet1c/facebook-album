@@ -1,0 +1,80 @@
+.slideshow {
+  
+  .slideshow__inner {
+  
+  }
+  
+  .slideshow__content {
+  
+  }
+
+  .slideshow__heading {
+    font-size: .8em;
+    text-align: center;
+    padding: .5em;
+    background: white;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+
+    &:hover {
+      white-space: normal;
+    }
+  }
+
+  .slideshow__viewer {
+    padding-top: 56.25%;
+    background-position: center;
+    background-size: cover;
+  }
+
+}
+
+.thumbnails {
+
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  margin-top: 4px;
+    
+  .thumbnails__list {
+    display: flex;
+    justify-content: space-between;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+
+  .thumbnails__item {
+    width: calc((100% / 3) - 3px);
+  }
+
+  .thumbnails__img {
+    padding-top: 100%;
+    background-size: cover;
+    background-position: center center;
+  }
+
+}
+
+.checkbox {
+  
+  .checkbox__input {
+    visibility: hidden;
+    position: absolute;
+
+    &:checked ~ .checkbox__label {
+      white-space: normal
+    }
+  }
+
+  .checkbox__label {
+    text-align: center;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: block;
+  }
+
+}
