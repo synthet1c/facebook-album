@@ -23,8 +23,7 @@ export const facebook = (cb) => {
       version: 'v2.9',
       access_token: ACCESS_TOKEN
     })
-
-    // FB.AppEvents.logPageView()
+    
     const albumAndImages = curry((profile, album, photos) => ({
       ...album,
       profile,
@@ -33,12 +32,11 @@ export const facebook = (cb) => {
 
     const lifted = liftA3(albumAndImages, getProfile(PROFILE), getAlbum(ALBUM_ID), getPhotos(ALBUM_ID))
       .map(attachHTML)
-      .map(trace('applied'))
+      // .map(trace('applied'))
 
     cb(lifted)
   }
-  // script.src = '//connect.facebook.net/en_US/sdk.js'
-  script.src = '//connect.facebook.net/en_US/sdk/debug.js'
+  script.src = '//connect.facebook.net/en_US/sdk.js'
   document.head.appendChild(script)
 }
 
@@ -56,7 +54,8 @@ export const getProfileAlbums = profileName => new Task((reject, resolve) => {
 
 export const getPhotos = albumId => new Task((reject, resolve) => {
   FB.api(`/${albumId}/photos`, {
-    access_token: ACCESS_TOKEN
+    access_token: ACCESS_TOKEN,
+    fields: photoFields
   } ,resolve)
 })
 
@@ -82,13 +81,6 @@ const header = heading =>
   div('.fb-album__header',
     h3('fb-album__heading', heading)
   )
-
-const getImage = compose(prop('source'), last, prop('images'))
-
-
-
-const loadImagesTest = images => new Promise(res => setTimeout(res, 600))
-
 
 const icon = () => 
   svg('svg', '#fb_icon.fb-album__icon', { viewBox: '0 0 1024 1024', width: '100%' },
@@ -134,8 +126,3 @@ const attachHTML = album => ({
     )
   )
 })
-
-
-
-
-
