@@ -6,7 +6,7 @@ import '../scss/facebook.scss'
 
 const test = 'test'
 const APP_ID = '1995360280696450'
-const TOKEN = 'a201dee5b6ed0b94e796129b09c44c78'
+const TOKEN = 'ZwWKbBf0TBRXtBybOwhHJDTWFxE'
 const PROFILE = 'TwelveBoardStore'
 const ALBUM_ID = '1776962582516324'
 const ACCESS_TOKEN = `${APP_ID}|${TOKEN}`
