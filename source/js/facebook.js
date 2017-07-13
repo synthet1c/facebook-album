@@ -5,8 +5,8 @@ import { compose, curry, prop, head, last, map, chain, take, trace, liftA3 } fro
 import '../scss/facebook.scss'
 
 const test = 'test'
-const APP_ID = '775908159169504'
-const TOKEN = 'cYEIsh0rs25OQQC8Ex2hXyCOut4'
+const APP_ID = '1995360280696450'
+const TOKEN = 'a201dee5b6ed0b94e796129b09c44c78'
 const PROFILE = 'TwelveBoardStore'
 const ALBUM_ID = '1776962582516324'
 const ACCESS_TOKEN = `${APP_ID}|${TOKEN}`
@@ -20,10 +20,11 @@ export const facebook = (cb) => {
     FB.init({
       appId: APP_ID,
       xfbml: true,
-      version: 'v2.3',
+      version: 'v2.9',
       access_token: ACCESS_TOKEN
     })
-    
+
+    // FB.AppEvents.logPageView()
     const albumAndImages = curry((profile, album, photos) => ({
       ...album,
       profile,
@@ -36,7 +37,8 @@ export const facebook = (cb) => {
 
     cb(lifted)
   }
-  script.src = '//connect.facebook.net/en_US/sdk.js'
+  // script.src = '//connect.facebook.net/en_US/sdk.js'
+  script.src = '//connect.facebook.net/en_US/sdk/debug.js'
   document.head.appendChild(script)
 }
 
